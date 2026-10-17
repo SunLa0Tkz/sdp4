@@ -164,6 +164,11 @@ world.expectSeat(SHORT_FLIGHT, "5A").isFree();
 - restart in the middle: `PersistenceReloadTest` (crash after A/B/C, close and reopen all dbs, then resume or roll back)
 - standalone subsystems: `SeatMapStandaloneTest`, `ETicketIssuerStandaloneTest`, `PassengerServicesStandaloneTest`
 
+## AI usage
+
+I used Claude (AI assistant by Anthropic) for this assignment: it wrote most of the code, tests and this README,
+and helped find and fix errors.
+
 ## UML
 
 ![UML](docs/class-diagram.png)
