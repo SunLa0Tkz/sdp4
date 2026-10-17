@@ -1,0 +1,113 @@
+@startuml class-diagram
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontSize 13
+skinparam nodesep 25
+skinparam ranksep 55
+skinparam linetype polyline
+hide empty members
+hide circle
+
+title Flight Reservation - Facade over three subsystems
+
+package "Client" #F2F2F2 {
+  class ConsoleApp
+}
+
+package "Facade layer" #E3ECFA {
+  class BookingFacade <<Facade>> {
+    +book(request) : BookingChain
+    +resume(ref) : BookingChain
+    -runChain(booking)
+  }
+  class BookingAdminFacade <<Facade>> {
+    +inspect(ref) : String
+    +cancelBooking(ref, reason)
+    +rollBackUnfinished()
+    +checkIn(ref)
+  }
+  class Compensator {
+    ~undo(booking, failedStep, reason)
+  }
+  class BookingChain {
+    status : ChainStatus
+  }
+  class BookingChainRepository <<bookings.db>>
+}
+
+package "A: Seating" #E4F2E7 {
+  class SeatMap {
+    +holdSeat(...) : SeatHold
+    +confirm(id) / release(id)
+  }
+  class FareCalculator <<logic>>
+  class SeatHold <<entity>> {
+    HELD / CONFIRMED / RELEASED
+  }
+  class SeatRepository <<seating.db>>
+}
+
+package "B: Ticketing" #FBF3DC {
+  class ETicketIssuer {
+    +issue(request) : ETicket
+    +voidTicket(id) / checkIn(id)
+  }
+  class BaggageRulesEngine <<logic>>
+  class ETicket <<entity>> {
+    ISSUED / CHECKED_IN / VOIDED
+  }
+  class TicketRepository <<ticketing.db>>
+}
+
+package "C: Passenger services" #F9E3E1 {
+  class LoyaltyProgram {
+    +creditMiles(...) / reverseMiles(ref)
+  }
+  class MealPreferenceService {
+    +requestMeal(...)
+    +confirm(id) / cancel(id)
+  }
+  class MilesCalculator <<logic>>
+  class MealRequest <<entity>> {
+    REQUESTED / CONFIRMED / CANCELLED
+  }
+  class PassengerServicesRepository <<passenger-services.db>>
+}
+
+ConsoleApp --> BookingFacade
+ConsoleApp --> BookingAdminFacade
+
+BookingFacade *-- Compensator
+BookingAdminFacade *-- Compensator
+BookingFacade --> BookingChainRepository
+BookingAdminFacade --> BookingChainRepository
+BookingChainRepository ..> BookingChain
+
+BookingFacade --> SeatMap
+BookingFacade --> ETicketIssuer
+BookingFacade --> MealPreferenceService
+BookingFacade --> LoyaltyProgram
+
+SeatMap --> FareCalculator
+SeatMap --> SeatRepository
+SeatRepository ..> SeatHold
+
+ETicketIssuer --> BaggageRulesEngine
+ETicketIssuer --> TicketRepository
+TicketRepository ..> ETicket
+
+LoyaltyProgram --> MilesCalculator
+LoyaltyProgram --> PassengerServicesRepository
+MealPreferenceService --> PassengerServicesRepository
+PassengerServicesRepository ..> MealRequest
+
+note left of BookingAdminFacade
+  BookingAdminFacade and Compensator use
+  the same four subsystem classes as
+  BookingFacade (arrows left out so the
+  picture stays readable).
+  Compensator undoes C, then B, then A.
+  A, B and C never use each other.
+end note
+@enduml
